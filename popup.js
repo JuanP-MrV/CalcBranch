@@ -2,6 +2,7 @@
 let expresion = ""; // Expresion matematica como cadena
 let resultadoPrevio = false; // Indica si el ultimo calculo genero un resultado
 let ultimoResultado = "0"; // Almacena el ultimo resultado calculado
+let displayElement = null; // Cache del elemento del display
 
 // Funcion para manejar la entrada de numeros y operadores
 function agregarEntrada(entrada) {
@@ -165,12 +166,15 @@ function construirArbol(tokens) {
       operadores.pop(); // Quitar el "("
     } else {
       // Operador
+      // Cache the top operator to avoid repeated array access
+      let topOp = operadores[operadores.length - 1];
       while (
         operadores.length &&
-        operadores[operadores.length - 1] !== "(" &&
-        precedencia[operadores[operadores.length - 1]] >= precedencia[token]
+        topOp !== "(" &&
+        precedencia[topOp] >= precedencia[token]
       ) {
         aplicarOperador();
+        topOp = operadores[operadores.length - 1];
       }
       operadores.push(token);
     }
@@ -217,7 +221,10 @@ function resolverArbol(nodo) {
 
 // Funcion para refrescar el display
 function refrescar() {
-  document.getElementById("valor_numero").value = expresion || "0";
+  if (!displayElement) {
+    displayElement = document.getElementById("valor_numero");
+  }
+  displayElement.value = expresion || "0";
 }
 
 // Action handlers object
@@ -242,12 +249,16 @@ const keyboardMap = {
 
 // Event handlers
 function initializeEventHandlers() {
-  // Button clicks
-  document.querySelectorAll("input[type='button']").forEach((button) => {
-    button.addEventListener("click", () => {
-      const value = button.value;
+  // Cache display element on initialization
+  displayElement = document.getElementById("valor_numero");
+  
+  // Use event delegation for button clicks
+  const table = document.querySelector("table");
+  table.addEventListener("click", (event) => {
+    if (event.target.type === "button") {
+      const value = event.target.value;
       (actionHandlers[value] || actionHandlers.default)(value);
-    });
+    }
   });
 
   // Keyboard input
