@@ -6,6 +6,11 @@ let displayElement = null; // Cache del elemento del display
 
 // Funcion para manejar la entrada de numeros y operadores
 function agregarEntrada(entrada) {
+  // Prevent overly long expressions (max 20 chars as per display limit)
+  if (expresion.length >= 20 && !resultadoPrevio) {
+    return;
+  }
+  
   if (resultadoPrevio && entrada !== "ANS") {
     if (["+", "-", "*", "/", "^"].includes(entrada)) {
       // Si es un operador, mantenemos la expresion actual (que es el resultado).
@@ -35,6 +40,11 @@ function darC() {
 
 // Funcion para evaluar la expresion
 function esIgual() {
+  // Early validation to avoid unnecessary processing
+  if (!expresion || expresion === "" || expresion === "0") {
+    return;
+  }
+  
   try {
     const tokens = tokenizarExpresion(expresion);
     if (!tokens.length) {
@@ -264,16 +274,17 @@ function initializeEventHandlers() {
   // Keyboard input
   document.addEventListener("keydown", (event) => {
     const key = event.key;
+    const lowerKey = key.toLowerCase();
 
     // Handle mapped keys
-    if (keyboardMap[key.toLowerCase()]) {
+    if (keyboardMap[lowerKey]) {
       event.preventDefault();
       if (key === "Backspace") {
         expresion = expresion.slice(0, -1);
         refrescar();
         return;
       }
-      const mappedValue = keyboardMap[key.toLowerCase()];
+      const mappedValue = keyboardMap[lowerKey];
       (actionHandlers[mappedValue] || actionHandlers.default)(mappedValue);
       return;
     }
