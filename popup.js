@@ -2,9 +2,15 @@
 let expresion = ""; // Expresion matematica como cadena
 let resultadoPrevio = false; // Indica si el ultimo calculo genero un resultado
 let ultimoResultado = "0"; // Almacena el ultimo resultado calculado
+let displayElement = null; // Cache del elemento del display
 
 // Funcion para manejar la entrada de numeros y operadores
 function agregarEntrada(entrada) {
+  // Prevent overly long expressions (max 20 chars as per display limit)
+  if (expresion.length >= 20 && !resultadoPrevio) {
+    return;
+  }
+  
   if (resultadoPrevio && entrada !== "ANS") {
     if (["+", "-", "*", "/", "^"].includes(entrada)) {
       // Si es un operador, mantenemos la expresion actual (que es el resultado).
@@ -34,6 +40,11 @@ function darC() {
 
 // Funcion para evaluar la expresion
 function esIgual() {
+  // Early validation to avoid unnecessary processing
+  if (!expresion || expresion === "0") {
+    return;
+  }
+  
   try {
     const tokens = tokenizarExpresion(expresion);
     if (!tokens.length) {
@@ -165,10 +176,12 @@ function construirArbol(tokens) {
       operadores.pop(); // Quitar el "("
     } else {
       // Operador
+      // Cache the top operator to avoid repeated array access
+      let topOp;
       while (
         operadores.length &&
-        operadores[operadores.length - 1] !== "(" &&
-        precedencia[operadores[operadores.length - 1]] >= precedencia[token]
+        (topOp = operadores[operadores.length - 1]) !== "(" &&
+        precedencia[topOp] >= precedencia[token]
       ) {
         aplicarOperador();
       }
@@ -217,7 +230,10 @@ function resolverArbol(nodo) {
 
 // Funcion para refrescar el display
 function refrescar() {
-  document.getElementById("valor_numero").value = expresion || "0";
+  if (!displayElement) {
+    displayElement = document.getElementById("valor_numero");
+  }
+  displayElement.value = expresion || "0";
 }
 
 // Action handlers object
@@ -242,27 +258,32 @@ const keyboardMap = {
 
 // Event handlers
 function initializeEventHandlers() {
-  // Button clicks
-  document.querySelectorAll("input[type='button']").forEach((button) => {
-    button.addEventListener("click", () => {
-      const value = button.value;
+  // Cache display element on initialization
+  displayElement = document.getElementById("valor_numero");
+  
+  // Use event delegation for button clicks
+  const table = document.querySelector("table");
+  table.addEventListener("click", (event) => {
+    if (event.target.type === "button") {
+      const value = event.target.value;
       (actionHandlers[value] || actionHandlers.default)(value);
-    });
+    }
   });
 
   // Keyboard input
   document.addEventListener("keydown", (event) => {
     const key = event.key;
+    const lowerKey = key.toLowerCase();
 
     // Handle mapped keys
-    if (keyboardMap[key.toLowerCase()]) {
+    if (keyboardMap[lowerKey]) {
       event.preventDefault();
       if (key === "Backspace") {
         expresion = expresion.slice(0, -1);
         refrescar();
         return;
       }
-      const mappedValue = keyboardMap[key.toLowerCase()];
+      const mappedValue = keyboardMap[lowerKey];
       (actionHandlers[mappedValue] || actionHandlers.default)(mappedValue);
       return;
     }
