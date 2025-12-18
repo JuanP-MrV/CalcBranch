@@ -41,7 +41,7 @@ function darC() {
 // Funcion para evaluar la expresion
 function esIgual() {
   // Early validation to avoid unnecessary processing
-  if (!expresion || expresion === "" || expresion === "0") {
+  if (!expresion || expresion === "0") {
     return;
   }
   
@@ -177,14 +177,13 @@ function construirArbol(tokens) {
     } else {
       // Operador
       // Cache the top operator to avoid repeated array access
-      let topOp = operadores[operadores.length - 1];
+      let topOp;
       while (
         operadores.length &&
-        topOp !== "(" &&
+        (topOp = operadores[operadores.length - 1]) !== "(" &&
         precedencia[topOp] >= precedencia[token]
       ) {
         aplicarOperador();
-        topOp = operadores[operadores.length - 1];
       }
       operadores.push(token);
     }
